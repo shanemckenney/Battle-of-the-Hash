@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚔ BATTLE OF THE HASH — CySA+ CS0-003</title>
+  <style>
+    :root {
+      --bg:         #060e1a;
+      --surface:    #0c1d30;
+      --surface2:   #102540;
+      --border:     #1a3550;
+      --border2:    #254a6e;
+      --cyan:       #00e5ff;
+      --cyan-dim:   #0097a7;
+      --green:      #00ff88;
+      --green-dim:  #00c46a;
+      --red:        #ff4444;
+      --red-dim:    #c0392b;
+      --yellow:     #ffd700;
+      --orange:     #ff8c00;
+      --text:       #dde6f0;
+      --muted:      #8099b0;
+      --dim:        #3d5570;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ── LAYOUT ── */
+    .wrap  { max-width: 980px; margin: 0 auto; padding: 14px 16px; }
+    .row   { display: flex; gap: 14px; }
+    .col   { flex: 1 1 0; min-width: 0; }
+    .center { text-align: center; }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .ptitle {
+      color: var(--cyan);
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-block;
+      background: transparent;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 8px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+      border-radius: 2px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: var(--cyan); color: var(--bg); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-red    { border-color: var(--red);    color: var(--red);    }
+    .btn-red:hover:not(:disabled)    { background: var(--red);    color: #fff; }
+    .btn-green  { border-color: var(--green);  color: var(--green);  }
+    .btn-green:hover:not(:disabled)  { background: var(--green);  color: var(--bg); }
+    .btn-yellow { border-color: var(--yellow); color: var(--yellow); }
+    .btn-yellow:hover:not(:disabled) { background: var(--yellow); color: var(--bg); }
+    .btn-orange { border-color: var(--orange); color: var(--orange); }
+    .btn-orange:hover:not(:disabled) { background: var(--orange); color: var(--bg); }
+    .btn-lg  { padding: 12px 26px; font-size: 13px; }
+    .btn-blk { width: 100%; display: block; text-align: center; margin-bottom: 8px; }
+
+    /* ── INPUTS ── */
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      border-radius: 2px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: var(--cyan); }
+    textarea { resize: vertical; min-height: 64px; }
+
+    /* ── HP BARS ── */
+    .hp-section {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .hp-lbl { font-size: 9px; letter-spacing: 2px; margin-bottom: 4px; }
+    .hp-lbl.c  { color: var(--green); }
+    .hp-lbl.h  { color: var(--red); text-align: right; }
+    .hp-track {
+      height: 22px;
+      background: #06101e;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .hp-fill { height: 100%; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+    .hp-fill.c { background: linear-gradient(90deg, var(--green-dim), var(--green)); }
+    .hp-fill.h { background: linear-gradient(90deg, var(--red-dim), var(--red)); float: right; }
+    .hp-val {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      font-size: 11px; font-weight: bold; color: #fff;
+      text-shadow: 0 0 6px #000; padding: 0 5px;
+    }
+    .hp-val.l { left: 0; }
+    .hp-val.r { right: 0; }
+    .vs-mid { color: var(--yellow); font-size: 17px; font-weight: bold; text-align: center; }
+
+    /* ── ASCII STAGE ── */
+    .stage {
+      display: grid;
+      grid-template-columns: 1fr 42px 1fr;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 14px 12px;
+      margin-bottom: 12px;
+    }
+    .art { white-space: pre; font-size: 10.5px; line-height: 1.35; text-align: center; }
+    .art.c { color: var(--green); }
+    .art.h { color: var(--red); }
+    .stage-vs { color: var(--yellow); font-size: 19px; font-weight: bold; text-align: center; }
+
+    /* ── EVENT BANNER ── */
+    .banner {
+      text-align: center;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: bold;
+      min-height: 40px;
+      border-radius: 2px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+    .banner.hit    { background: rgba(0,255,136,.12); color: var(--green); border: 1px solid var(--green-dim); }
+    .banner.dmg    { background: rgba(255,68,68,.12);  color: var(--red);   border: 1px solid var(--red-dim); }
+    .banner.idle   { background: rgba(0,229,255,.07);  color: var(--cyan);  border: 1px solid var(--border2); }
+
+    /* ── QUESTION ── */
+    .q-meta    { color: var(--muted); font-size: 9px; letter-spacing: 2px; margin-bottom: 4px; }
+    .q-num     { color: var(--yellow); font-size: 9px; letter-spacing: 2px; margin-bottom: 3px; }
+    .q-text    { font-size: 14px; line-height: 1.65; padding-left: 12px; border-left: 3px solid var(--cyan); margin-bottom: 14px; }
+    .q-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .q-opt {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 10px 11px; font-size: 12px; border-radius: 2px; line-height: 1.4;
+    }
+    .q-opt .ol { color: var(--cyan); font-weight: bold; margin-right: 6px; }
+    .q-opt.ok  { border-color: var(--green); background: rgba(0,255,136,.08); color: var(--green); }
+    .q-opt.ok .ol { color: var(--green); }
+
+    /* ── ANSWER BUTTONS (Player) ── */
+    .a-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .a-btn {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 14px 12px;
+      font-family: 'Courier New', monospace; font-size: 13px;
+      text-align: left; cursor: pointer; border-radius: 2px;
+      transition: border-color 0.12s; line-height: 1.4;
+    }
+    .a-btn .al { color: var(--cyan); font-weight: bold; margin-right: 7px; }
+    .a-btn:hover:not(:disabled)   { border-color: var(--cyan); }
+    .a-btn.sel    { border-color: var(--yellow); background: rgba(255,215,0,.07); color: var(--yellow); }
+    .a-btn.sel .al{ color: var(--yellow); }
+    .a-btn.ok     { border-color: var(--green); background: rgba(0,255,136,.09); color: var(--green); }
+    .a-btn.ok .al { color: var(--green); }
+    .a-btn.ng     { border-color: var(--red);   background: rgba(255,68,68,.07);  color: var(--red); }
+    .a-btn.ng .al { color: var(--red); }
+    .a-btn:disabled { cursor: default; }
+
+    /* ── VOTE GRID ── */
+    .v-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+    .v-cell {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 9px 6px; text-align: center; border-radius: 2px;
+      transition: border-color 0.3s;
+    }
+    .v-cell.live { border-color: var(--cyan-dim); }
+    .v-cell.win  { border-color: var(--green); background: rgba(0,255,136,.07); }
+    .v-cell .vl  { font-size: 14px; color: var(--cyan); font-weight: bold; }
+    .v-cell .vn  { font-size: 26px; font-weight: bold; color: var(--text); line-height: 1.1; }
+    .v-cell .vp  { font-size: 9px; color: var(--muted); margin-top: 3px; }
+
+    /* ── TAUNT BOX ── */
+    .taunt {
+      background: rgba(255,68,68,.09);
+      border: 1px solid rgba(255,68,68,.35);
+      padding: 11px 14px; min-height: 50px;
+      font-size: 13px; color: var(--red); font-style: italic;
+      border-radius: 2px; margin: 10px 0;
+    }
+
+    /* ── EXPLAIN BOX ── */
+    .explain {
+      background: rgba(0,229,255,.06); border: 1px solid var(--cyan-dim);
+      padding: 11px 14px; font-size: 12px; color: var(--cyan);
+      border-radius: 2px; margin-top: 10px; line-height: 1.6;
+    }
+
+    /* ── PROGRESS DOTS ── */
+    .dots { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+    .dot  { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg); }
+    .dot.done { background: var(--green); border-color: var(--green); }
+    .dot.cur  { background: var(--yellow); border-color: var(--yellow); }
+
+    /* ── PLAYER CHIPS ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .chip {
+      padding: 3px 8px; font-size: 10px; border-radius: 2px;
+      border: 1px solid var(--border); color: var(--muted);
+    }
+    .chip.in { border-color: var(--green); color: var(--green); background: rgba(0,255,136,.07); }
+
+    /* ── LANDING ── */
+    .land {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 20px; text-align: center;
+    }
+    .title-art { color: var(--cyan); font-size: 10.5px; line-height: 1.3; white-space: pre; margin-bottom: 20px; }
+    .role-row  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 520px; margin-top: 14px; }
+    .rcard {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 20px 12px; cursor: pointer; border-radius: 3px;
+      text-decoration: none; color: var(--text); transition: border-color 0.2s, transform 0.2s;
+      display: block;
+    }
+    .rcard:hover { border-color: var(--cyan); transform: translateY(-3px); }
+    .rcard .ri  { font-size: 24px; margin-bottom: 9px; }
+    .rcard .rn  { color: var(--cyan); font-size: 10px; letter-spacing: 2px; font-weight: bold; }
+    .rcard .rs  { color: var(--muted); font-size: 10px; margin-top: 4px; line-height: 1.4; }
+
+    /* ── GAMEOVER ── */
+    .go-wrap { text-align: center; padding: 30px 20px; }
+    .go-art  { font-size: 11px; line-height: 1.35; display: inline-block; margin-bottom: 18px; white-space: pre; }
+    .go-stat {
+      display: inline-block; background: var(--surface); border: 1px solid var(--border);
+      padding: 12px 22px; border-radius: 2px; text-align: center; margin: 4px;
+    }
+
+    /* ── HASHER ACTION GRID ── */
+    .act-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 10px 0; }
+
+    /* ── PAGE HEADER ── */
+    .page-hdr {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0 12px; margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-hdr .ph-title { font-size: 11px; letter-spacing: 3px; }
+    .page-hdr .ph-room  { color: var(--muted); font-size: 10px; }
+    .page-hdr .ph-room span { color: var(--yellow); }
+
+    /* ── BLINK / PULSE ── */
+    @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes flashG  { 0%{background:rgba(0,255,136,.25)} 100%{background:transparent} }
+    @keytml flashR  { 0%{background:rgba(255,68,68,.25)} 100%{background:transparent} }
+    .urgent { animation: blink 0.55s infinite; }
+
+    /* ── JOIN SCREEN ── */
+    .join-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 3px; padding: 24px 20px;
+      max-width: 360px; width: 100%; margin: 0 auto;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 620px) {
+      .a-grid { grid-template-columns: 1fr; }
+      .role-row { grid-template-columns: 1fr; }
+      .v-grid { grid-template-columns: repeat(2, 1fr); }
+      .act-grid { grid-template-columns: 1fr; }
+      .hp-section { grid-template-columns: 1fr; }
+      .vs-mid { display: none; }
+      .stage  { grid-template-columns: 1fr 32px 1fr; }
+      .q-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div style="text-align:center;padding:60px;color:var(--dim);">▌ Loading arena...</div>
+  </div>
+
+  <!-- Firebase 9 compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+  'use strict';
+
+  // ════════════════════════════════════════════════════════════════
+  //  STEP 1 — PASTE YOUR FIREBASE CONFIG HERE
+  //  (Firebase Console → Project Settings → Your apps → SDK setup)
+  // ════════════════════════════════════════════════════════════════
+  const FB_CFG = {
+    apiKey:            "AIzaSyAveVvEswD9_ndO29TweCvcrFi2ZK6AXQ0",
+    authDomain:        "battle-of-the-hash.firebaseapp.com",
+    databaseURL:       "https://battle-of-the-hash-default-rtdb.firebaseio.com",
+    projectId:         "battle-of-the-hash",
+    storageBucket:     "battle-of-the-hash.firebasestorage.app",
+    messagingSenderId: "689564002373",
+    appId:             "1:689564002373:web:3a21e9d026569ec6131b2c"
+  };
+
+  // Anthropic key entered at runtime in Hasher panel — never stored in this file
+  let _antKey = sessionStorage.getItem('bh_ant') || '';
+
+  // Static room code for this cohort
+  const ROOM = "HASH2026";
+  const MAX_CHP = 500;  // Class max HP
+  const MAX_HHP = 500;  // Hasher max HP
+
+  // ════════════════════════════════════════════════════════════════
+  //  QUESTION BANK — CySA+ CS0-003 (10 sample Qs)
+  //  Add more questions in the same format below
+  // ════════════════════════════════════════════════════════════════
+  const QUESTIONS = [
+    // ── TIER 1: RECALL (Q1-5, damage 10) ──────────────────────────
+    {
+      text: "What is the FIRST phase of the PICERL incident response lifecycle?",
+      A: "Identification", B: "Containment", C: "Preparation", D: "Eradication",
+      correct: "C", damage: 15, category: "INCIDENT RESPONSE",
+      explanation: "PICERL: Preparation → Identification → Containment → Eradication → Recovery → Lessons Learned. You cannot respond to what you are not prepared for."
+    },
+    {
+      text: "Which CVSS metric group accounts for characteristics SPECIFIC to your organization's environment, such as compensating controls and asset criticality?",
+      A: "Base", B: "Temporal", C: "Environmental", D: "Contextual",
+      correct: "C", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "Base = inherent characteristics. Temporal = exploit maturity and patch availability. Environmental = YOUR infrastructure, compensating controls, asset criticality. Always apply all three before prioritizing remediation."
+    },
+    {
+      text: "Which MITRE ATT&CK tactic covers techniques used to MAINTAIN presence after initial compromise — such as registry run keys, scheduled tasks, and malicious services?",
+      A: "Initial Access", B: "Persistence", C: "Privilege Escalation", D: "Defense Evasion",
+      correct: "B", damage: 15, category: "MITRE ATT&CK",
+      explanation: "Persistence (TA0003): techniques adversaries use to keep access across restarts, changed credentials, and interruptions. Registry run keys, scheduled tasks, malicious services all live here."
+    },
+    {
+      text: "What does IOC stand for in a threat intelligence context, and what does it represent?",
+      A: "Index of Confidence — a risk rating for vulnerabilities",
+      B: "Indicator of Compromise — forensic evidence that an intrusion may have occurred",
+      C: "Instance of Control — a security safeguard applied to an asset",
+      D: "Integrity of Configuration — a baseline comparison result",
+      correct: "B", damage: 15, category: "THREAT INTELLIGENCE",
+      explanation: "IOCs are artifacts observed on a network or OS that indicate a computer intrusion. Examples: malicious IP, file hash, registry key, suspicious domain. They are the raw evidence of attacker activity."
+    },
+    {
+      text: "Which Windows Security Event ID indicates a SUCCESSFUL user logon?",
+      A: "4625", B: "4720", C: "4648", D: "4624",
+      correct: "D", damage: 15, category: "LOG ANALYSIS",
+      explanation: "4624 = Successful logon. 4625 = Failed logon. 4720 = User account created. 4648 = Logon using explicit credentials. These four Event IDs appear on every version of the exam. Know them cold."
+    },
+
+    // ── TIER 2: COMPREHENSION (Q6-10, damage 12) ──────────────────
+    {
+      text: "What is the KEY difference between a vulnerability scan and a penetration test?",
+      A: "Vulnerability scans require credentials; penetration tests do not",
+      B: "Vulnerability scans identify weaknesses; penetration tests actively exploit them",
+      C: "Penetration tests only assess external systems; scans assess internal",
+      D: "Vulnerability scans are automated; penetration tests are always manual",
+      correct: "B", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "Scanning = find and report. Pen testing = find, exploit, and prove impact. Both are valuable — they answer different questions. Pen tests require written authorization and defined scope."
+    },
+    {
+      text: "What is the KEY difference between STATIC and DYNAMIC malware analysis?",
+      A: "Static analysis requires a sandbox; dynamic analysis does not",
+      B: "Static analysis examines code WITHOUT executing it; dynamic analysis observes behavior DURING execution",
+      C: "Dynamic analysis is used for known malware; static is used for unknown samples",
+      D: "Static analysis is always performed first and provides more complete results",
+      correct: "B", damage: 15, category: "MALWARE ANALYSIS",
+      explanation: "Static = examine file, strings, headers, imports without running it. Safe, but obfuscated malware evades it. Dynamic = execute in a sandbox and watch behavior. Ghidra/IDA Pro = static. Cuckoo Sandbox = dynamic. Both complement each other."
+    },
+    {
+      text: "Why would an analyst choose a CREDENTIALED vulnerability scan over an unauthenticated scan?",
+      A: "Credentialed scans are faster and consume fewer network resources",
+      B: "Credentialed scans can inspect the OS and applications from within, revealing vulnerabilities unauthenticated scans cannot see",
+      C: "Unauthenticated scans require local admin access to the scanning host",
+      D: "Credentialed scans are better for testing perimeter firewall rules",
+      correct: "B", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "Unauthenticated scans see what an outsider sees — open ports and banners. Credentialed scans log in and check installed software versions, patch levels, registry settings, and misconfigurations. Far more complete, far more findings."
+    },
+    {
+      text: "Which NIST CSF function involves developing and implementing appropriate safeguards to ensure delivery of critical infrastructure services?",
+      A: "Identify", B: "Protect", C: "Detect", D: "Respond",
+      correct: "B", damage: 15, category: "FRAMEWORKS",
+      explanation: "IDENTIFY = know your assets and risks. PROTECT = implement safeguards. DETECT = monitor for events. RESPOND = act on detected events. RECOVER = restore capabilities. Know the order — it shows up in scenario questions."
+    },
+    {
+      text: "An organization has 500 open vulnerability findings and capacity to remediate 50 per sprint. Which approach BEST ensures the highest-risk items are addressed first?",
+      A: "Remediate alphabetically by CVE ID",
+      B: "Remediate oldest findings first regardless of severity",
+      C: "Prioritize by CVSS score combined with asset criticality and exploitability",
+      D: "Remediate findings that affect the most systems first",
+      correct: "C", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "CVSS alone is insufficient. A 9.8 on an isolated dev server is lower priority than an 8.0 on an internet-facing payment system. Asset criticality + exploitability + CVSS base score = proper risk-based prioritization."
+    },
+
+    // ── TIER 3: APPLICATION (Q11-15, damage 15) ───────────────────
+    {
+      text: "Alerts show failed authentications against 60 different user accounts from a single IP over 30 minutes — only 2 password attempts per account. Which attack is MOST likely occurring?",
+      A: "Brute force", B: "Credential stuffing", C: "Password spraying", D: "Rainbow table attack",
+      correct: "C", damage: 15, category: "THREAT ANALYSIS",
+      explanation: "Password spraying = few passwords × many accounts, deliberately slow to avoid lockout thresholds. Brute force = many passwords against ONE account. Credential stuffing = breached username:password pairs. The 2-attempt-per-account pattern is the giveaway."
+    },
+    {
+      text: "A critical CVE is discovered on an internet-facing web application. No vendor patch exists yet. Which compensating control should be implemented FIRST?",
+      A: "Take the server offline until a patch is available",
+      B: "Deploy a Web Application Firewall rule targeting the specific vulnerability",
+      C: "Reimage the server from a known-good snapshot",
+      D: "Move the application to a non-standard port",
+      correct: "B", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "A WAF virtual patch blocks the specific exploit vector without taking the system offline. It buys time until an official patch is available. Taking offline = business impact. Port change = security through obscurity. Reimaging doesn't fix the underlying vulnerability."
+    },
+    {
+      text: "An analyst observes outbound HTTPS connections to a newly registered domain occurring every 4 hours, lasting exactly 3 minutes, transmitting small consistent data volumes. Which technique does this MOST likely represent?",
+      A: "Bulk data exfiltration", B: "DNS tunneling", C: "C2 beaconing", D: "SSL stripping",
+      correct: "C", damage: 15, category: "NETWORK ANALYSIS",
+      explanation: "Scheduled, regular, consistent-size outbound connections are the signature of C2 beaconing — malware phoning home to receive commands. The regularity and small payload distinguish it from bulk exfiltration. Newly registered domain is an additional IOC."
+    },
+    {
+      text: "A workstation is confirmed to have active ransomware encrypting files on a shared network drive accessed by 40 employees. What is the MOST critical IMMEDIATE action?",
+      A: "Run an emergency antivirus scan on the workstation",
+      B: "Shut down the shared file server to protect remaining files",
+      C: "Isolate the infected workstation from the network",
+      D: "Begin reimaging the workstation immediately",
+      correct: "C", damage: 15, category: "INCIDENT RESPONSE",
+      explanation: "Containment FIRST — isolate the source before it encrypts more. Shutting down the file server causes business disruption and may make things worse. Reimaging before isolating allows continued spread. Antivirus rarely stops active ransomware mid-execution."
+    },
+    {
+      text: "Which tool would a CySA+ analyst use to perform DYNAMIC behavioral analysis of a suspicious executable without risking the production environment?",
+      A: "Nessus", B: "Nmap", C: "Wireshark", D: "Cuckoo Sandbox",
+      correct: "D", damage: 15, category: "THREAT HUNTING",
+      explanation: "Cuckoo Sandbox = execute unknown files in an isolated environment and observe behavior — file writes, registry changes, network calls, process spawning. Nessus = vulnerability scanner. Nmap = port/host discovery. Wireshark = packet capture of existing traffic."
+    },
+
+    // ── TIER 4: ANALYSIS (Q16-20, damage 18) ─────────────────────
+    {
+      text: "A SIEM correlates Event 4624 (Logon Type 3) → Event 4672 (Special Privileges) from the same source IP targeting 5 different hosts within 9 minutes. What does this pattern MOST likely indicate?",
+      A: "Normal domain controller authentication traffic",
+      B: "Pass-the-Hash lateral movement",
+      C: "Kerberoasting attack",
+      D: "Domain-wide password spray",
+      correct: "B", damage: 15, category: "LOG ANALYSIS / SIEM",
+      explanation: "Pass-the-Hash: attacker uses a captured NTLM hash to authenticate without knowing the plaintext password. Type 3 Network logons + special privileges across multiple hosts in rapid succession = lateral movement signature. Kerberoasting targets service accounts via Kerberos ticket requests — different event IDs entirely."
+    },
+    {
+      text: "Wireshark shows SYN packets sent sequentially to ports 21, 22, 23, 25, 80, 443, and 3389 from a single source. No three-way handshakes complete. What type of activity is occurring?",
+      A: "UDP port scan",
+      B: "TCP SYN stealth scan",
+      C: "Full TCP connect scan",
+      D: "Xmas tree scan",
+      correct: "B", damage: 15, category: "NETWORK ANALYSIS",
+      explanation: "SYN stealth scan (half-open): sends SYN, notes response (SYN-ACK = open, RST = closed), then sends RST before completing the handshake. Never completes the 3-way handshake — stealthier than a full connect scan. Sequential port order is typical of automated reconnaissance."
+    },
+    {
+      text: "Threat intel reports an APT using T1059.001 (PowerShell) launched via macro-enabled Office documents. Which Sysmon event combination provides the HIGHEST-CONFIDENCE detection?",
+      A: "Event ID 1 only — process creation showing winword.exe spawning powershell.exe",
+      B: "Event ID 3 only — network connection from powershell.exe to external IP",
+      C: "Event ID 11 only — file creation in TEMP directory",
+      D: "All three correlated — parent-child process chain PLUS network connection PLUS file drop",
+      correct: "D", damage: 15, category: "DETECTION ENGINEERING",
+      explanation: "No single event is conclusive. Word opens → spawns PS (Event 1) → PS makes network call (Event 3) → drops payload (Event 11). The correlated chain is the high-fidelity detection. This is exactly why SIEM correlation rules matter — individual alerts are noise, chains are signal."
+    },
+    {
+      text: "DNS logs show 8,000 queries per hour to subdomains formatted as 32–63 character alphanumeric strings under a single external domain. No corresponding HTTP/S traffic exists. What technique does this indicate?",
+      A: "DNS amplification DDoS",
+      B: "Fast flux DNS",
+      C: "DNS zone transfer reconnaissance",
+      D: "DNS tunneling for data exfiltration",
+      correct: "D", damage: 15, category: "NETWORK ANALYSIS",
+      explanation: "DNS tunneling encodes data (often base64) in subdomain query strings sent to an attacker-controlled domain. High volume, long subdomains, no corresponding web traffic = data exfiltration via DNS. DNS amplification uses open resolvers for DDoS. Fast flux rapidly changes DNS records for C2 resilience."
+    },
+    {
+      text: "A SOC receives 4,200 alerts per day. Analysis shows 96% are false positives consuming 7 analyst-hours daily. What is the MOST effective long-term solution?",
+      A: "Hire two additional analysts to handle the alert volume",
+      B: "Disable the alerting rules generating the most noise",
+      C: "Tune SIEM detection rules, establish behavioral baselines, and implement risk-based alert prioritization",
+      D: "Route all low-severity alerts to a weekly digest email",
+      correct: "C", damage: 15, category: "SECURITY OPERATIONS",
+      explanation: "Alert fatigue causes real threats to be missed — it's a critical SOC problem. The fix is tuning, not more people or suppressing rules. Baselines establish what normal looks like. Risk-based prioritization surfaces high-fidelity alerts first. Hiring without tuning means more analysts drowning in the same noise."
+    },
+
+    // ── TIER 5: EVALUATION (Q21-24, damage 20) ───────────────────
+    {
+      text: "A threat hunter finds this Sysmon process chain: WINWORD.EXE → POWERSHELL.EXE -EncodedCommand → net.exe → cmd.exe, with PowerShell making an outbound request to an external IP. Which MITRE ATT&CK technique chain does this MOST accurately represent?",
+      A: "T1078 (Valid Accounts) → T1021 (Remote Services)",
+      B: "T1055 (Process Injection) → T1003 (Credential Dumping)",
+      C: "T1566.001 (Spearphishing Attachment) → T1059.001 (PowerShell) → T1105 (Ingress Tool Transfer)",
+      D: "T1190 (Exploit Public-Facing Application) → T1071 (Application Layer Protocol)",
+      correct: "C", damage: 15, category: "MITRE ATT&CK / THREAT HUNTING",
+      explanation: "Word document (phishing attachment delivery) → PowerShell with encoded command (script interpreter execution) → external request to pull down additional tooling (ingress tool transfer). Textbook macro-based spearphishing attack chain. Sysmon parent-child relationships are essential for detecting this."
+    },
+    {
+      text: "During active IR, forensics confirms an attacker has been present 21 days, moved laterally to 6 systems, and is actively exfiltrating data. The CISO demands immediate disconnection of all affected systems. What is the GREATEST risk of immediate disconnection WITHOUT prior forensic imaging?",
+      A: "The attacker may detect the response and escalate privileges",
+      B: "Users will lose access to critical business applications",
+      C: "Volatile evidence — memory contents, active connections, running processes — will be permanently destroyed, weakening legal and insurance claims",
+      D: "Additional systems may be compromised during the disconnection window",
+      correct: "C", damage: 15, category: "INCIDENT RESPONSE",
+      explanation: "RAM contains active processes, encryption keys, network connections, and credentials that exist ONLY while the system is powered on. Immediate shutdown destroys this. Sequence matters: image volatile memory FIRST, THEN isolate. This distinction has lost lawsuits and ended careers."
+    },
+    {
+      text: "Active threat intel confirms a nation-state APT is exploiting a CVE in your VPN appliance in the wild. The vendor patch was released 4 hours ago. Your change management policy requires a 72-hour testing window. What do you recommend?",
+      A: "Follow standard change management — policy exists for a reason and must not be bypassed",
+      B: "Patch immediately without any testing — the threat is active",
+      C: "Wait for the weekly patch window scheduled in 5 days",
+      D: "Invoke emergency change management: implement compensating controls NOW, begin expedited testing, deploy patch within 24 hours",
+      correct: "D", damage: 15, category: "VULNERABILITY MANAGEMENT",
+      explanation: "Emergency change procedures exist precisely for this scenario. Strict 72-hour adherence during confirmed active exploitation is negligence. But patching a VPN without testing could take down remote access. Answer: compensating controls immediately (reduce attack surface NOW) + expedited patch cycle. Document everything for compliance."
+    },
+    {
+      text: "After a confirmed breach, the security team prepares a report for the board of directors. Which content approach is MOST appropriate?",
+      A: "Full technical IOC list with YARA rules, Sysmon event IDs, and PCAP analysis",
+      B: "Executive summary only — boards do not require details",
+      C: "Business impact summary, risk posture before and after, remediation status, and regulatory notification obligations — with a technical appendix available on request",
+      D: "A detailed timeline of every analyst action taken during the incident",
+      correct: "C", damage: 15, category: "REPORTING & COMMUNICATION",
+      explanation: "Boards care about: What happened? What did it cost? Are we fixed? Do we have legal exposure? Technical details belong in an appendix for the CISO and legal team. Reporting and Communication is its own exam domain worth 17% — know your audience."
+    },
+
+    // ── TIER 6: PBQ KILL SHOT (Q25, drain mechanic) ──────────────
+    {
+      text: "AT 02:47 AM your SIEM fires a Priority 1 alert. Evidence: (1) Event 4624 Type 3 — service account svc_backup authenticated to FILESERVER01 from WORKSTATION-44 (abnormal source). (2) Event 4672 — Special privileges assigned to svc_backup on FILESERVER01. (3) Event 7045 — New service 'WindowsUpdate32' installed on FILESERVER01. (4) Event 4663 — 847 files accessed in \Finance\Q4Reports\ within 11 minutes. (5) NetFlow — Active outbound connection from FILESERVER01 to 185.220.101.47:443 (confirmed Tor exit node). Which IR action sequence is MOST appropriate?",
+      A: "Log the events, escalate to management at start of business, continue monitoring overnight",
+      B: "Block 185.220.101.47 at the perimeter firewall and monitor to see if the alert clears",
+      C: "Run EDR scan on FILESERVER01 and change the svc_backup password, then monitor for recurrence",
+      D: "Isolate FILESERVER01 from the network, capture forensic memory image, block the Tor exit node subnet at the perimeter, notify stakeholders per the IR plan, preserve all logs, begin formal eradication",
+      correct: "D", damage: 999, category: "PBQ — INCIDENT RESPONSE",
+      explanation: "Every event is a confirmed IOC: 4624 Type 3 from unexpected source = lateral movement. 4672 = privilege abuse on target. Event 7045 WindowsUpdate32 = malicious persistence service. 4663 bulk file access = data staging. Active Tor connection = exfiltration IN PROGRESS. Only D addresses containment, evidence preservation, eradication, and stakeholder communication — all required simultaneously."
+    }
+  ]
+
+  // ════════════════════════════════════════════════════════════════
+  //  ASCII ART LIBRARY
+  // ════════════════════════════════════════════════════════════════
+  const ART = {
+    classA: " \\o/ \\o/ \\o/\n  |   |   |\n /|\\ /|\\ /|\\",
+    classB: " \\o/  o   o\n  |   |   |\n / \\ /|\\ /|\\",
+    classC: "  o   x   o\n  |       |\n / \\     / \\",
+    hashA:  "  .-\"\"\"\"\"\"-.\n / >:) SHA \\\n| MD5? LOL |\n \\ BCRYPT!/\n  '------'",
+    hashB:  "  .-\"\"\"\"\"\"-.\n / >:( SHA \\\n|  help??  |\n \\ crackd /\n  '------'",
+    hashC:  "  .-\"\"\"\"\"\"-.\n /  x_x SHA\\\n| BREACHED!|\n \\  nooo../\n  '------'",
+    hashD:  "  .-\"\"\"\"\"\"-.\n /  x_x    \\\n|  HASHED  |\n \\  gg.../ \n  '------'",
+    winC:   " \\o/ \\o/ \\o/\n  |   |   |\n /|\\ /|\\ /|\\\n\n* GRADS WIN *",
+    winH:   "  .-\"\"\"\"\"\"-.\n /  >:D SHA\\\n| BCRYPT!! |\n \\ U FAIL /\n  '------'"
+  };
+
+  function classArt(hp) {
+    return hp > 60 ? ART.classA : hp > 30 ? ART.classB : ART.classC;
+  }
+  function hasherArt(hp) {
+    return hp > 60 ? ART.hashA : hp > 30 ? ART.hashB : hp > 0 ? ART.hashC : ART.hashD;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  SOUND ENGINE — Web Audio API, zero external files
+  // ════════════════════════════════════════════════════════════════
+  const SND = {
+    muted: localStorage.getItem('bh_mute') === '1',
+    ctx: null,
+    get() {
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    },
+    toggle() {
+      this.muted = !this.muted;
+      localStorage.setItem('bh_mute', this.muted ? '1' : '0');
+      document.querySelectorAll('.mute-btn').forEach(el => {
+        el.textContent = this.muted ? '🔇 MUTED' : '🔊 SOUND';
+      });
+    }
+  };
+
+  function _note(c, freq, start, dur, type='sine', vol=0.4) {
+    try {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.connect(g); g.connect(c.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, c.currentTime + start);
+      g.gain.setValueAtTime(0.001, c.currentTime + start);
+      g.gain.linearRampToValueAtTime(vol, c.currentTime + start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+      osc.start(c.currentTime + start);
+      osc.stop(c.currentTime + start + dur + 0.05);
+    } catch(e) {}
+  }
+
+  function _sweep(c, f1, f2, start, dur, type='sawtooth', vol=0.3) {
+    try {
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.connect(g); g.connect(c.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(f1, c.currentTime + start);
+      osc.frequency.exponentialRampToValueAtTime(f2, c.currentTime + start + dur);
+      g.gain.setValueAtTime(vol, c.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
+      osc.start(c.currentTime + start);
+      osc.stop(c.currentTime + start + dur + 0.05);
+    } catch(e) {}
+  }
+
+  function _noise(c, start, dur, vol=0.18) {
+    try {
+      const sz = Math.floor(c.sampleRate * dur);
+      const buf = c.createBuffer(1, sz, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let i=0;i<sz;i++) d[i]=Math.random()*2-1;
+      const src=c.createBufferSource(), flt=c.createBiquadFilter(), g=c.createGain();
+      src.buffer=buf; flt.type='bandpass'; flt.frequency.value=800;
+      src.connect(flt); flt.connect(g); g.connect(c.destination);
+      g.gain.setValueAtTime(vol, c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+start+dur);
+      src.start(c.currentTime+start);
+    } catch(e) {}
+  }
+
+  const SFX = {
+    play(fn) { if(SND.muted) return; try { fn(SND.get()); } catch(e){} },
+
+    tick()        { this.play(c=>{ _note(c,1800,0,0.04,'sine',0.12); }); },
+    locked()      { this.play(c=>{ _note(c,523,0,0.07,'sine',0.28); _note(c,784,0.07,0.14,'sine',0.28); }); },
+    join()        { this.play(c=>{ _note(c,660,0,0.07,'sine',0.18); _note(c,880,0.07,0.12,'sine',0.16); }); },
+
+    question()    { this.play(c=>{
+      _note(c,330,0,0.08,'square',0.18); _note(c,440,0.09,0.08,'square',0.18); _note(c,523,0.18,0.22,'square',0.22);
+    }); },
+
+    reveal()      { this.play(c=>{
+      for(let i=0;i<8;i++) _noise(c, i*0.055, 0.05, 0.1+i*0.018);
+      _note(c,180,0.48,0.35,'triangle',0.38);
+    }); },
+
+    critHit()     { this.play(c=>{
+      [261,329,392,523,659].forEach((f,i)=>_note(c,f,i*0.09,0.28,'sine',0.3));
+      _note(c,523,0.46,0.7,'sine',0.22); _note(c,659,0.46,0.7,'sine',0.15);
+    }); },
+
+    counterHash() { this.play(c=>{
+      _sweep(c,440,100,0,0.55,'sawtooth',0.28);
+      _note(c,55,0.08,0.7,'sine',0.38); _note(c,80,0.3,0.5,'sine',0.2);
+    }); },
+
+    tauntFire()   { this.play(c=>{
+      _sweep(c,1400,180,0,0.28,'sawtooth',0.18); _note(c,75,0.2,0.4,'sine',0.28);
+    }); },
+
+    tauntHit()    { this.play(c=>{
+      _note(c,180,0,0.1,'sawtooth',0.22); _sweep(c,200,70,0.1,0.32,'sawtooth',0.2);
+    }); },
+
+    hpDrain()     { this.play(c=>{ _note(c,110,0,0.18,'sine',0.32); _note(c,70,0.14,0.3,'sine',0.28); }); },
+
+    victory()     { this.play(c=>{
+      [261,293,329,349,392,440,494,523].forEach((f,i)=>_note(c,f,i*0.07,0.14,'sine',0.28));
+      [523,659,784].forEach((f,i)=>_note(c,f,0.58,1.1,'sine',0.22-i*0.04));
+    }); },
+
+    defeat()      { this.play(c=>{
+      [220,196,165,130,110].forEach((f,i)=>_note(c,f,i*0.14,0.38,'sawtooth',0.22));
+      _note(c,55,0.72,1.4,'sawtooth',0.28);
+      _sweep(c,300,55,0,0.9,'sine',0.18);
+    }); },
+
+    arenaInit()   { this.play(c=>{
+      [196,262,330,392].forEach((f,i)=>_note(c,f,i*0.1,0.18,'square',0.2));
+      _note(c,392,0.42,0.4,'square',0.22);
+    }); }
+  };
+
+  function muteBtn() {
+    return `<button class="mute-btn btn" style="font-size:10px;padding:5px 10px;" onclick="SND.toggle()">
+      ${SND.muted?'🔇 MUTED':'🔊 SOUND'}</button>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  RUNTIME STATE
+  // ════════════════════════════════════════════════════════════════
+  let db, roomRef;
+  let myId   = 'p' + Date.now() + Math.random().toString(36).slice(2,5);
+  let myName = '';
+  let killListeners = [];
+  // Sound state tracking
+  let _prevStatus = null, _prevVotes = 0, _prevTaunt = '', _prevCHP = 100, _prevHHP = 100, _prevPCount = 0;
+
+  const app$ = () => document.getElementById('app');
+  const role = new URLSearchParams(location.search).get('role');
+
+  // ════════════════════════════════════════════════════════════════
+  //  ANSWER SHUFFLE — deterministic per question index
+  //  Same shuffle on every client for the same question
+  // ════════════════════════════════════════════════════════════════
+  function seededRand(n) {
+    const x = Math.sin(n * 9301 + 49297) * 233280;
+    return x - Math.floor(x);
+  }
+
+  function getShuffledQ(q, qIdx) {
+    if (qIdx === undefined) return q;
+    const keys = ['A','B','C','D'];
+    const order = [...keys];
+    // Fisher-Yates with seeded random
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRand(qIdx * 17 + i) * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    // order[0] = original key that goes in display slot A, etc.
+    const display = {}, origToDisp = {};
+    keys.forEach((dispKey, idx) => {
+      const origKey = order[idx];
+      display[dispKey] = q[origKey];
+      origToDisp[origKey] = dispKey;
+    });
+    return {
+      text: q.text, category: q.category,
+      A: display.A, B: display.B, C: display.C, D: display.D,
+      correct: origToDisp[q.correct],
+      damage: q.damage, explanation: q.explanation
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  BOOT
+  // ════════════════════════════════════════════════════════════════
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      firebase.initializeApp(FB_CFG);
+      db      = firebase.database();
+      roomRef = db.ref('rooms/' + ROOM);
+      route();
+    } catch(e) {
+      app$().innerHTML = errBox('Firebase init failed: ' + e.message +
+        '<br><br>Verify FIREBASE_CONFIG values are filled in the HTML file.');
+    }
+  });
+
+  function route() {
+    if      (!role)            renderLanding();
+    else if (role === 'host')   initHost();
+    else if (role === 'hasher') initHasher();
+    else if (role === 'player') initPlayer();
+    else renderLanding();
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  LANDING
+  // ════════════════════════════════════════════════════════════════
+  function renderLanding() {
+    app$().innerHTML = `
+    <div class="land">
+      <pre class="title-art">
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║    ⚔   B A T T L E   O F   T H E   H A S H  ║
+║                                               ║
+║          C y S A +   C S 0 - 0 0 3           ║
+║               F I N A L   B O S S            ║
+║                                               ║
+╚═══════════════════════════════════════════════╝</pre>
+
+      <div style="color:var(--muted);font-size:11px;margin-bottom:4px;">
+        ROOM: <span style="color:var(--yellow)">${ROOM}</span>
+        &nbsp;|&nbsp; ${QUESTIONS.length} QUESTIONS &nbsp;|&nbsp; SELECT YOUR ROLE
+      </div>
+
+      <div class="role-row">
+        <a href="?role=host" class="rcard">
+          <div class="ri">🖥️</div>
+          <div class="rn">HOST</div>
+          <div class="rs">Lead Instructor<br>Controls the battle</div>
+        </a>
+        <a href="?role=hasher" class="rcard">
+          <div class="ri">💀</div>
+          <div class="rn">THE HASHER</div>
+          <div class="rs">Shane<br>The Final Boss</div>
+        </a>
+        <a href="?role=player" class="rcard">
+          <div class="ri">⚔️</div>
+          <div class="rn">STUDENT</div>
+          <div class="rs">Join the arena<br>Defeat the boss</div>
+        </a>
+      </div>
+
+      <div style="margin-top:28px;color:var(--dim);font-size:10px;letter-spacing:2px;">
+        STUDENTS: OPEN THIS URL → CLICK STUDENT
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  HOST VIEW
+  // ════════════════════════════════════════════════════════════════
+  function initHost() {
+    app$().innerHTML = `
+    <div class="wrap">
+      <div class="page-hdr">
+        <div class="ph-title" style="color:var(--cyan);">⚔ BATTLE OF THE HASH — HOST CONTROL</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ph-room">ROOM: <span>${ROOM}</span></div>
+          ${muteBtn()}
+        </div>
+      </div>
+      <div id="hbody"><div style="text-align:center;padding:40px;color:var(--dim);">Connecting...</div></div>
+    </div>`;
+
+    const fn = roomRef.on('value', snap => {
+      const st = snap.val();
+      if (!st) { renderHostEmpty(); return; }
+
+      // ── SOUND TRIGGERS (host screen = the Zoom shared screen) ──
+      const newStatus  = st.status || 'lobby';
+      const newVotes   = Object.values(st.players||{}).filter(p=>p.hasAnswered).length;
+      const newTaunt   = st.hasherTaunt || '';
+      const newCHP     = st.classHP  ?? MAX_CHP;
+      const newHHP     = st.hasherHP ?? MAX_HHP;
+      const newPCount  = Object.keys(st.players||{}).length;
+
+      if (_prevStatus !== newStatus) {
+        if (newStatus === 'question')          SFX.question();
+        if (newStatus === 'reveal') {
+          setTimeout(() => SFX.reveal(), 50);
+          setTimeout(() => {
+            if (st.revealData?.classWon) SFX.critHit();
+            else SFX.counterHash();
+            SFX.hpDrain();
+          }, 600);
+        }
+        if (newStatus === 'gameover') {
+          setTimeout(() => { if(st.gameResult==='class') SFX.victory(); else SFX.defeat(); }, 300);
+        }
+      }
+      if (newVotes > _prevVotes)              SFX.tick();
+      if (newTaunt && newTaunt !== _prevTaunt) SFX.tauntHit();
+      if (newPCount > _prevPCount)            SFX.join();
+
+      _prevStatus = newStatus; _prevVotes = newVotes; _prevTaunt = newTaunt;
+      _prevCHP = newCHP; _prevHHP = newHHP; _prevPCount = newPCount;
+      // ── END SOUND TRIGGERS ──
+
+      if (st.status === 'gameover') { renderGameover(st, 'host'); return; }
+      renderHost(st);
+    });
+    killListeners.push(() => roomRef.off('value', fn));
+  }
+
+  function renderHostEmpty() {
+    document.getElementById('hbody').innerHTML = `
+    <div class="panel center">
+      <div class="ptitle">ARENA NOT INITIALIZED</div>
+      <pre class="art h" style="font-size:12px;margin:18px 0 20px;">${ART.hashA}</pre>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:20px;">
+        Initialize the arena to begin. Students join after this step.
+      </div>
+      <button class="btn btn-green btn-lg" onclick="hostInit()">⚡ INITIALIZE ARENA</button>
+    </div>`;
+  }
+
+  function renderHost(st) {
+    const hb = document.getElementById('hbody');
+    if (!hb) return;
+
+    const cq      = st.currentQuestion || 0;
+    const q       = QUESTIONS[cq];
+    const cHP     = st.classHP  ?? MAX_CHP;
+    const hHP     = st.hasherHP ?? MAX_HHP;
+    const players = st.players  || {};
+    const pCount  = Object.keys(players).length;
+    const pAns    = Object.values(players).filter(p => p.hasAnswered).length;
+    const taunt   = st.hasherTaunt || '';
+    const last    = st.lastEvent   || '⚔ Arena ready. Waiting for battle to begin.';
+    const status  = st.status;
+
+    // Build vote counts
+    const V = {A:0,B:0,C:0,D:0};
+    Object.values(players).forEach(p => { if(p.answer && V[p.answer]!==undefined) V[p.answer]++; });
+    const Vtot = V.A+V.B+V.C+V.D;
+
+    // Progress dots
+    const dots = QUESTIONS.map((_,i) => {
+      let cls = 'dot';
+      if (i < cq) cls += ' done';
+      else if (i === cq && status !== 'lobby') cls += ' cur';
+      return `<div class="${cls}" title="Q${i+1}"></div>`;
+    }).join('');
+
+    // Banner type
+    const bType = (status === 'reveal' && st.revealData?.classWon) ? 'hit'
+                : (status === 'reveal' && !st.revealData?.classWon) ? 'dmg'
+                : 'idle';
+
+    // Control area
+    let ctrl = '';
+    if (status === 'lobby') {
+      ctrl = `
+        <div class="center" style="padding:14px 0;">
+          <div style="color:var(--muted);font-size:12px;margin-bottom:14px;">
+            ${pCount} student${pCount!==1?'s':''} connected — ready when you are
+          </div>
+          <button class="btn btn-green btn-lg" onclick="hostStart(0)" ${pCount===0?'disabled':''}>
+            ▶ START — QUESTION 1
+          </button>
+          ${pCount===0?'<div style="color:var(--dim);font-size:10px;margin-top:8px;letter-spacing:1px;">Waiting for students to join...</div>':''}
+        </div>`;
+    } else if (status === 'question') {
+      ctrl = `
+        <div class="q-num">QUESTION ${cq+1} OF ${QUESTIONS.length} &nbsp;|&nbsp; ${q.category}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="q-options">
+          ${['A','B','C','D'].map(l=>`
+            <div class="q-opt"><span class="ol">${l}.</span>${q[l]}</div>`).join('')}
+        </div>
+        <div class="center" style="margin-top:10px;">
+          <button class="btn btn-yellow btn-lg" onclick="hostReveal(${cq})">🔓 REVEAL ANSWER</button>
+        </div>`;
+    } else if (status === 'reveal') {
+      const rd = st.revealData || {};
+      ctrl = `
+        <div class="q-num">QUESTION ${cq+1} — REVEALED</div>
+        <div class="q-text">${q.text}</div>
+        <div class="q-options">
+          ${['A','B','C','D'].map(l=>{
+            const isOk = l === q.correct;
+            return `<div class="q-opt ${isOk?'ok':''}">
+              <span class="ol">${l}.${isOk?' ✓':''}</span>${q[l]}</div>`;
+          }).join('')}
+        </div>
+        <div class="explain">💡 ${q.explanation}</div>
+        <div class="center" style="margin-top:14px;">
+          ${cq < QUESTIONS.length-1
+            ? `<button class="btn btn-green btn-lg" onclick="hostStart(${cq+1})">▶ NEXT QUESTION (${cq+2}/${QUESTIONS.length})</button>`
+            : `<button class="btn btn-yellow btn-lg" onclick="hostEnd()">🏁 END GAME</button>`}
+        </div>`;
+    }
+
+    hb.innerHTML = `
+    <!-- HP BARS -->
+    <div class="hp-section">
+      <div>
+        <div class="hp-lbl c">▲ COHORT HP</div>
+        <div class="hp-track">
+          <div class="hp-fill c" style="width:${Math.round(cHP/MAX_CHP*100)}%"></div>
+          <div class="hp-val l">${cHP}/${MAX_CHP}</div>
+        </div>
+      </div>
+      <div class="vs-mid">VS</div>
+      <div>
+        <div class="hp-lbl h">THE HASHER HP ▲</div>
+        <div class="hp-track">
+          <div class="hp-fill h" style="width:${Math.round(hHP/MAX_HHP*100)}%"></div>
+          <div class="hp-val r">${hHP}/${MAX_HHP}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASCII STAGE -->
+    <div class="stage">
+      <pre class="art c">${classArt(cHP)}</pre>
+      <div class="stage-vs">⚔</div>
+      <pre class="art h">${hasherArt(hHP)}</pre>
+    </div>
+
+    ${taunt ? `<div class="taunt">💀 THE HASHER: "${taunt}"</div>` : ''}
+    <div class="banner ${bType}">${last}</div>
+
+    <!-- LIVE VOTES -->
+    <div class="panel">
+      <div class="ptitle">LIVE VOTES — ${pAns}/${pCount} ANSWERED</div>
+      <div class="v-grid">
+        ${['A','B','C','D'].map(l => {
+          const n   = V[l];
+          const pct = Vtot ? Math.round(n/Vtot*100) : 0;
+          const win = status === 'reveal' && l === q.correct;
+          return `<div class="v-cell ${n>0?'live':''} ${win?'win':''}">
+            <div class="vl">${l}${win?' ✓':''}</div>
+            <div class="vn">${n}</div>
+            <div class="vp">${pct}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- QUESTION CONTROL -->
+    <div class="panel">
+      <div class="ptitle">QUESTION CONTROL</div>
+      ${ctrl}
+      <div class="dots">${dots}</div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="panel">
+      <div class="ptitle">ARENA — ${pCount} STUDENT${pCount!==1?'S':''}</div>
+      <div class="chips">
+        ${Object.values(players).map(p=>
+          `<div class="chip ${p.hasAnswered?'in':''}">${p.name||'?'}${p.hasAnswered?' ✓':''}</div>`
+        ).join('') || '<span style="color:var(--dim);font-size:11px;">No students yet — share the URL</span>'}
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+        <button class="btn" onclick="hostInit()">↺ RESET GAME</button>
+      </div>
+    </div>`;
+  }
+
+  // HOST ACTIONS
+  function hostInit() {
+    SFX.arenaInit();
+    roomRef.set({
+      status: 'lobby', currentQuestion: 0,
+      classHP: 500, hasherHP: 500,
+      players: null, hasherTaunt: '',
+      lastEvent: '⚔ Arena initialized. Students, join now!',
+      gameResult: null, revealData: null
+    });
+  }
+
+  function hostStart(n) {
+    const q = getShuffledQ(QUESTIONS[n], n);
+    roomRef.update({
+      status: 'question', currentQuestion: n,
+      questionStartedAt: firebase.database.ServerValue.TIMESTAMP,
+      hasherTaunt: '', revealData: null,
+      lastEvent: `Q${n+1} ACTIVE: ${q.category} — Awaiting answers!`,
+      'currentQ/text': q.text, 'currentQ/A': q.A, 'currentQ/B': q.B,
+      'currentQ/C': q.C, 'currentQ/D': q.D, 'currentQ/timeLimit': 30
+    });
+    // Clear player answers
+    roomRef.child('players').once('value', snap => {
+      if (!snap.exists()) return;
+      const u = {};
+      Object.keys(snap.val()).forEach(pid => {
+        u[`players/${pid}/answer`] = null;
+        u[`players/${pid}/hasAnswered`] = false;
+      });
+      roomRef.update(u);
+    });
+  }
+
+  function hostReveal(qIdx) {
+    const q       = getShuffledQ(QUESTIONS[qIdx], qIdx);
+    const isFinal = qIdx === QUESTIONS.length - 1;
+
+    roomRef.once('value', snap => {
+      const st  = snap.val() || {};
+      const cHP = st.classHP  ?? MAX_CHP;
+      const hHP = st.hasherHP ?? MAX_HHP;
+      const V   = {A:0,B:0,C:0,D:0};
+      Object.values(st.players||{}).forEach(p => { if(p.answer) V[p.answer]=(V[p.answer]||0)+1; });
+
+      const total        = Object.values(V).reduce((a,b)=>a+b,0);
+      const correctVotes = V[q.correct] || 0;
+      const correctPct   = total > 0 ? correctVotes / total : 0;
+      const classBroke   = correctPct > 0.60;
+
+      let nCHP=cHP, nHHP=hHP, event, classWon;
+
+      if (isFinal) {
+        // ── Q25 KILL SHOT: drain remaining HP of the losing side ──
+        if (classBroke) {
+          nHHP = 0; classWon = true;
+          event = `💥 FINAL HASH! ${Math.round(correctPct*100)}% correct — HASHER FULLY DRAINED! Class wins!`;
+        } else {
+          nCHP = 0; classWon = false;
+          event = `💀 FINAL COUNTER HASH! Only ${Math.round(correctPct*100)}% correct — CLASS FULLY DRAINED! The Hasher wins!`;
+        }
+      } else if (total === 0) {
+        event = `⚠ No votes recorded. No damage dealt.`; classWon = false;
+      } else if (classBroke) {
+        nHHP     = Math.max(0, hHP - 15);
+        classWon = true;
+        event    = `💥 CRITICAL HIT! ${Math.round(correctPct*100)}% answered ${q.correct}. The Hasher takes 15 HP damage!`;
+      } else {
+        nCHP     = Math.max(0, cHP - 15);
+        classWon = false;
+        event    = `💀 COUNTER HASH! Only ${Math.round(correctPct*100)}% correct. Class takes 15 HP damage!`;
+      }
+
+      let gameResult = null;
+      if (nHHP <= 0) gameResult = 'class';
+      else if (nCHP <= 0) gameResult = 'hasher';
+
+      roomRef.update({
+        status: gameResult ? 'gameover' : 'reveal',
+        classHP: nCHP, hasherHP: nHHP,
+        lastEvent: event, gameResult,
+        revealData: {
+          correct: q.correct, votes: V, classWon,
+          explanation: q.explanation,
+          correctPct: Math.round(correctPct*100)
+        }
+      });
+    });
+  }
+
+  function hostEnd() {
+    roomRef.update({ status: 'gameover', gameResult: 'class' });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  HASHER VIEW (THE BOSS PANEL)
+  // ════════════════════════════════════════════════════════════════
+  function initHasher() {
+    app$().innerHTML = `
+    <div class="wrap">
+      <div class="page-hdr">
+        <div class="ph-title" style="color:var(--red);">💀 THE HASHER — BOSS PANEL</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="ph-room">ROOM: <span>${ROOM}</span></div>
+          ${muteBtn()}
+        </div>
+      </div>
+      <div id="hsbody"><div style="text-align:center;padding:40px;color:var(--dim);">Connecting to arena...</div></div>
+    </div>`;
+
+    const fn = roomRef.on('value', snap => {
+      const st = snap.val();
+      if (!st) {
+        document.getElementById('hsbody').innerHTML =
+          `<div class="center" style="padding:40px;color:var(--dim);">Game not initialized. Waiting for host...</div>`;
+        return;
+      }
+      if (st.status === 'gameover') { renderGameover(st, 'hasher'); return; }
+      renderHasher(st);
+    });
+    killListeners.push(() => roomRef.off('value', fn));
+  }
+
+  function renderHasher(st) {
+    const hb = document.getElementById('hsbody');
+    if (!hb) return;
+
+    const cq  = st.currentQuestion || 0;
+    const q   = getShuffledQ(QUESTIONS[cq], cq);
+    const cHP = st.classHP  ?? MAX_CHP;
+    const hHP = st.hasherHP ?? MAX_HHP;
+    const V   = {A:0,B:0,C:0,D:0};
+    const pls = st.players || {};
+    Object.values(pls).forEach(p => { if(p.answer) V[p.answer]=(V[p.answer]||0)+1; });
+    const Vtot   = V.A+V.B+V.C+V.D;
+    const pAns   = Object.values(pls).filter(p=>p.hasAnswered).length;
+    const pCount = Object.keys(pls).length;
+    const status = st.status;
+
+    const presets = [
+      "Is that your final answer? Seriously?",
+      "I expected more from this cohort.",
+      "My grandmother knows this one.",
+      "Tick tock. The logs don't lie.",
+      "CVSS without context is just a number. Context.",
+      "Keep guessing. I've got all day.",
+      "That's not even in the right tactic.",
+      "SHA-1? Really? That was deprecated years ago.",
+      "Interesting choice. Wrong, but interesting.",
+      "PICERL. You should be dreaming PICERL."
+    ];
+
+    hb.innerHTML = `
+    <!-- HP -->
+    <div class="hp-section">
+      <div>
+        <div class="hp-lbl c">▲ COHORT HP</div>
+        <div class="hp-track">
+          <div class="hp-fill c" style="width:${Math.round(cHP/MAX_CHP*100)}%"></div>
+          <div class="hp-val l">${cHP}/${MAX_CHP}</div>
+        </div>
+      </div>
+      <div class="vs-mid">⚔</div>
+      <div>
+        <div class="hp-lbl h">YOUR HP ▲</div>
+        <div class="hp-track">
+          <div class="hp-fill h" style="width:${Math.round(hHP/MAX_HHP*100)}%"></div>
+          <div class="hp-val r">${hHP}/${MAX_HHP}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <pre class="art c">${classArt(cHP)}</pre>
+      <div class="stage-vs">💀</div>
+      <pre class="art h">${hasherArt(hHP)}</pre>
+    </div>
+
+    ${(status==='question'||status==='reveal') ? `
+    <div class="panel">
+      <div class="ptitle">LIVE INTEL — ${pAns}/${pCount} VOTED</div>
+      <div class="q-num">${q.category} — Q${cq+1}</div>
+      <div class="q-text" style="font-size:13px;">${q.text}</div>
+      <div class="v-grid">
+        ${['A','B','C','D'].map(l=>{
+          const n   = V[l];
+          const pct = Vtot ? Math.round(n/Vtot*100) : 0;
+          const win = status==='reveal' && l===q.correct;
+          return `<div class="v-cell ${n>0?'live':''} ${win?'win':''}">
+            <div class="vl">${l}${win?' ✓':''}</div>
+            <div class="vn">${n}</div>
+            <div class="vp">${pct}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${status==='reveal'?`<div class="explain">✓ ${q.correct}: ${q.explanation}</div>`:''}
+    </div>` : `
+    <div class="panel center">
+      <div style="color:var(--dim);font-size:12px;padding:14px;">
+        ${status==='lobby'?'⏳ Host has not started the game yet...':'Standby...'}
+      </div>
+    </div>`}
+
+    <!-- ARSENAL -->
+    <div class="panel">
+      <div class="ptitle">💀 HASHER ARSENAL — FIRE TAUNTS</div>
+      <div style="color:var(--muted);font-size:10px;margin-bottom:10px;letter-spacing:1px;">
+        FIRES LIVE TO HOST SCREEN IN REAL TIME
+      </div>
+      <!-- API KEY (runtime only — never in the file) -->
+      <div id="key-section" style="background:rgba(255,140,0,.08);border:1px solid rgba(255,140,0,.3);padding:10px 12px;border-radius:2px;margin-bottom:12px;">
+        <div style="color:var(--orange);font-size:9px;letter-spacing:2px;margin-bottom:6px;">🔑 ANTHROPIC API KEY (for AI taunts)</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="password" id="ant-key-input" placeholder="sk-ant-..." 
+            style="margin-bottom:0;flex:1;font-size:11px;" 
+            onkeypress="if(event.key==='Enter')saveKey()">
+          <button class="btn btn-orange" style="white-space:nowrap;" onclick="saveKey()">SAVE</button>
+        </div>
+        <div id="key-status" style="font-size:10px;margin-top:5px;color:var(--dim);">
+          ${_antKey ? '✓ Key loaded from this session' : 'Enter key to enable AI taunts'}
+        </div>
+      </div>
+      <div class="act-grid">
+        ${presets.map(t=>`
+          <button class="btn btn-red" style="font-size:10px;text-align:left;padding:7px 10px;"
+            onclick="sTaunt('${t.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">
+            ${t.length>36?t.slice(0,36)+'…':t}
+          </button>`).join('')}
+      </div>
+
+      <!-- AI TAUNT -->
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div class="ptitle">🤖 AI TAUNT GENERATOR</div>
+        <textarea id="tctx" placeholder="Context for The Hasher: e.g. 'Class voted B on the DNS tunneling question'"></textarea>
+        <button class="btn btn-orange" onclick="genTaunt()" id="ai-btn" style="margin-bottom:8px;">⚡ GENERATE AI TAUNT</button>
+        <div id="ai-out" style="display:none;" class="taunt"></div>
+        <button class="btn btn-red btn-blk" id="fire-btn" style="display:none;margin-top:6px;" onclick="fireAI()">
+          🔥 FIRE THIS TAUNT
+        </button>
+      </div>
+
+      <!-- CUSTOM -->
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div class="ptitle">CUSTOM TAUNT</div>
+        <input type="text" id="ctxt" placeholder="Write your own...">
+        <button class="btn btn-red" onclick="sCustom()">🔥 FIRE</button>
+      </div>
+
+      <div id="tconf" style="color:var(--green);font-size:11px;min-height:20px;margin-top:8px;"></div>
+    </div>`;
+  }
+
+  function sTaunt(msg) {
+    SFX.tauntFire();
+    roomRef.update({ hasherTaunt: msg });
+    tConf('Fired: "' + (msg.length>50?msg.slice(0,50)+'…':msg) + '"');
+  }
+  function sCustom() {
+    const el = document.getElementById('ctxt');
+    if (!el || !el.value.trim()) return;
+    sTaunt(el.value.trim());
+    el.value = '';
+  }
+  function tConf(msg) {
+    const el = document.getElementById('tconf');
+    if (el) { el.textContent = '✓ ' + msg; setTimeout(()=>{ if(el)el.textContent=''; }, 3000); }
+  }
+
+  let pendingTaunt = '';
+
+  function saveKey() {
+    const el = document.getElementById('ant-key-input');
+    const k  = el?.value.trim();
+    if (!k || !k.startsWith('sk-')) {
+      const st = document.getElementById('key-status');
+      if(st) st.textContent = '⚠ Key should start with sk-ant-...';
+      return;
+    }
+    _antKey = k;
+    sessionStorage.setItem('bh_ant', k);
+    if(el) el.value = '';
+    const st = document.getElementById('key-status');
+    if(st) { st.style.color='var(--green)'; st.textContent='✓ Key saved for this session'; }
+  }
+
+  async function genTaunt() {
+    const ctx  = document.getElementById('tctx')?.value || '';
+    const btn  = document.getElementById('ai-btn');
+    const out  = document.getElementById('ai-out');
+    const fire = document.getElementById('fire-btn');
+    const key  = _antKey || sessionStorage.getItem('bh_ant') || '';
+    if (!key) {
+      if(out){ out.style.display='block'; out.textContent='⚠ Enter your Anthropic API key above first.'; } return;
+    }
+    if(btn)  { btn.disabled=true; btn.textContent='⚡ GENERATING...'; }
+    if(out)  { out.style.display='none'; }
+    if(fire) { fire.style.display='none'; }
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 150,
+          messages: [{
+            role: 'user',
+            content: `You are "The Hasher" — the villain final boss in a CySA+ CS0-003 certification review game.
+You are a cybersecurity expert who is deeply knowledgeable, intimidating, and sharp-tongued.
+Your taunts are professionally appropriate but cutting — they reference real security concepts when possible.
+Keep it to 1-2 SHORT sentences. No preamble, no labels, no quotes — just the taunt itself.
+Context: ${ctx || 'The class just answered a CySA+ CS0-003 question in the review game.'}`
+          }]
+        })
+      });
+      const data  = await resp.json();
+      const taunt = data.content?.[0]?.text?.trim() || 'Error parsing response.';
+      pendingTaunt = taunt;
+      if(out)  { out.style.display='block'; out.textContent='💀 "' + taunt + '"'; }
+      if(fire) { fire.style.display='block'; }
+    } catch(e) {
+      if(out) { out.style.display='block'; out.textContent='API error: ' + e.message; }
+    } finally {
+      if(btn) { btn.disabled=false; btn.textContent='⚡ GENERATE AI TAUNT'; }
+    }
+  }
+
+  function fireAI() {
+    if (!pendingTaunt) return;
+    sTaunt(pendingTaunt);
+    pendingTaunt = '';
+    const out  = document.getElementById('ai-out');
+    const fire = document.getElementById('fire-btn');
+    const ctx  = document.getElementById('tctx');
+    if(out)  { out.style.display='none'; }
+    if(fire) { fire.style.display='none'; }
+    if(ctx)  { ctx.value=''; }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  PLAYER VIEW
+  // ════════════════════════════════════════════════════════════════
+  function initPlayer() {
+    // Auto-rejoin if returning player
+    const sName = sessionStorage.getItem('bh_name');
+    const sId   = sessionStorage.getItem('bh_id');
+    if (sName && sId) {
+      myName = sName; myId = sId;
+      roomRef.child('players/' + myId).update({ name: myName });
+      startPlayerListen();
+    } else {
+      renderJoin();
+    }
+  }
+
+  function renderJoin() {
+    app$().innerHTML = `
+    <div class="land">
+      <pre class="title-art">
+⚔  B A T T L E   O F   T H E   H A S H  ⚔
+     C y S A +   C S 0 - 0 0 3</pre>
+      <div class="join-card">
+        <div class="ptitle">JOIN THE ARENA</div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:14px;">
+          Enter your name to face The Hasher
+        </div>
+        <input type="text" id="nin" placeholder="Your name..." maxlength="24"
+          onkeypress="if(event.key==='Enter')doJoin()">
+        <button class="btn btn-green btn-blk" onclick="doJoin()">⚔ ENTER THE ARENA</button>
+        <div style="color:var(--dim);font-size:10px;margin-top:8px;text-align:center;letter-spacing:1px;">
+          ROOM: <span style="color:var(--yellow)">${ROOM}</span>
+        </div>
+      </div>
+    </div>`;
+    setTimeout(() => document.getElementById('nin')?.focus(), 80);
+  }
+
+  function doJoin() {
+    const el = document.getElementById('nin');
+    const n  = el?.value.trim();
+    if (!n) { if(el) el.style.borderColor='var(--red)'; return; }
+    myName = n;
+    sessionStorage.setItem('bh_name', n);
+    sessionStorage.setItem('bh_id',   myId);
+    roomRef.child('players/' + myId).set({ name: n, answer: null, hasAnswered: false });
+    startPlayerListen();
+  }
+
+  let _pPrevStatus = null, _pPrevTaunt = '';
+
+  function startPlayerListen() {
+    renderPWait();
+    const fn = roomRef.on('value', snap => {
+      const st = snap.val();
+      if (!st) return;
+
+      // ── PLAYER SOUND TRIGGERS (each student's own device) ──
+      const ns = st.status || 'lobby';
+      const nt = st.hasherTaunt || '';
+      if (_pPrevStatus !== ns) {
+        if (ns === 'question') SFX.question();
+        if (ns === 'reveal') {
+          setTimeout(() => SFX.reveal(), 50);
+          setTimeout(() => {
+            const me = st.players?.[myId];
+            const q  = QUESTIONS[st.currentQuestion||0];
+            if (me?.answer === q?.correct) SFX.critHit();
+            else SFX.counterHash();
+          }, 600);
+        }
+        if (ns === 'gameover') {
+          setTimeout(() => { if(st.gameResult==='class') SFX.victory(); else SFX.defeat(); }, 300);
+        }
+      }
+      if (nt && nt !== _pPrevTaunt) SFX.tauntHit();
+      _pPrevStatus = ns; _pPrevTaunt = nt;
+      // ── END PLAYER SOUND TRIGGERS ──
+
+      byStatus(st);
+    });
+    killListeners.push(() => roomRef.off('value', fn));
+  }
+
+  function byStatus(st) {
+    if (st.status === 'gameover') { renderGameover(st, 'player'); return; }
+    if (st.status === 'lobby')    { renderPWait();                return; }
+    if (st.status === 'question') { renderPQuestion(st);          return; }
+    if (st.status === 'reveal')   { renderPReveal(st);            return; }
+  }
+
+  function renderPWait() {
+    app$().innerHTML = `
+    <div class="land" style="min-height:90vh;">
+      <pre class="title-art">⚔ BATTLE OF THE HASH ⚔</pre>
+      <pre class="art c" style="font-size:12px;margin:20px 0;">${ART.classA}</pre>
+      <div style="color:var(--cyan);font-size:13px;margin-bottom:6px;">
+        ${myName ? `Welcome, <strong>${myName}</strong>!` : ''}
+      </div>
+      <div style="color:var(--dim);font-size:12px;letter-spacing:1px;">
+        ⏳ Waiting for host to start the battle...
+      </div>
+    </div>`;
+  }
+
+  function renderPQuestion(st) {
+    const cq    = st.currentQuestion || 0;
+    const q     = getShuffledQ(QUESTIONS[cq], cq);
+    const cHP   = st.classHP  ?? MAX_CHP;
+    const hHP   = st.hasherHP ?? MAX_HHP;
+    const me    = st.players?.[myId] || {};
+    const myAns = me.answer || null;
+    const locked= me.hasAnswered || false;
+    const taunt = st.hasherTaunt || '';
+
+    app$().innerHTML = `
+    <div class="wrap" style="max-width:640px;">
+      <div class="hp-section" style="margin-top:12px;">
+        <div>
+          <div class="hp-lbl c">▲ COHORT HP</div>
+          <div class="hp-track">
+            <div class="hp-fill c" style="width:${Math.round(cHP/MAX_CHP*100)}%"></div>
+            <div class="hp-val l">${cHP}/${MAX_CHP}</div>
+          </div>
+        </div>
+        <div class="vs-mid">VS</div>
+        <div>
+          <div class="hp-lbl h">HASHER HP ▲</div>
+          <div class="hp-track">
+            <div class="hp-fill h" style="width:${Math.round(hHP/MAX_HHP*100)}%"></div>
+            <div class="hp-val r">${hHP}/${MAX_HHP}</div>
+          </div>
+        </div>
+      </div>
+
+      ${taunt ? `<div class="taunt">💀 THE HASHER: "${taunt}"</div>` : ''}
+
+      <div class="panel">
+        <div class="q-num">Q${cq+1} / ${QUESTIONS.length} &nbsp;|&nbsp; ${q.category}</div>
+        <div class="q-text">${q.text}</div>
+        <div class="a-grid">
+          ${['A','B','C','D'].map(l => {
+            const sel = locked && myAns===l;
+            return `<button class="a-btn ${sel?'sel':''}"
+              ${locked ? 'disabled' : `onclick="pAns('${l}')"`}>
+              <span class="al">${l}.</span>${q[l]}
+            </button>`;
+          }).join('')}
+        </div>
+        ${locked
+          ? `<div class="center" style="color:var(--green);font-size:14px;padding:10px;">
+               ✓ Locked in: <strong>${myAns}</strong>
+               <div style="color:var(--muted);font-size:11px;margin-top:4px;">Waiting for others...</div>
+             </div>`
+          : `<div class="center" style="color:var(--muted);font-size:12px;padding:8px;">Select your answer</div>`}
+      </div>
+    </div>`;
+  }
+
+  function pAns(letter) {
+    SFX.locked();
+    roomRef.child('players/' + myId).update({ answer: letter, hasAnswered: true });
+  }
+
+  function renderPReveal(st) {
+    const cq    = st.currentQuestion || 0;
+    const q     = getShuffledQ(QUESTIONS[cq], cq);
+    const cHP   = st.classHP  ?? MAX_CHP;
+    const hHP   = st.hasherHP ?? MAX_HHP;
+    const me    = st.players?.[myId] || {};
+    const myAns = me.answer || null;
+    const ok    = myAns === q.correct;
+    const taunt = st.hasherTaunt || '';
+
+    app$().innerHTML = `
+    <div class="wrap" style="max-width:640px;">
+      <div class="hp-section" style="margin-top:12px;">
+        <div>
+          <div class="hp-lbl c">▲ COHORT HP</div>
+          <div class="hp-track">
+            <div class="hp-fill c" style="width:${Math.round(cHP/MAX_CHP*100)}%"></div>
+            <div class="hp-val l">${cHP}/${MAX_CHP}</div>
+          </div>
+        </div>
+        <div class="vs-mid">VS</div>
+        <div>
+          <div class="hp-lbl h">HASHER HP ▲</div>
+          <div class="hp-track">
+            <div class="hp-fill h" style="width:${Math.round(hHP/MAX_HHP*100)}%"></div>
+            <div class="hp-val r">${hHP}/${MAX_HHP}</div>
+          </div>
+        </div>
+      </div>
+
+      ${taunt ? `<div class="taunt">💀 THE HASHER: "${taunt}"</div>` : ''}
+
+      <div class="panel">
+        <div class="q-num">Q${cq+1} RESULTS</div>
+        <div class="q-text">${q.text}</div>
+        <div class="a-grid">
+          ${['A','B','C','D'].map(l=>{
+            let cls='a-btn';
+            if(l===q.correct) cls+=' ok';
+            else if(myAns===l) cls+=' ng';
+            return `<button class="${cls}" disabled>
+              <span class="al">${l}.${l===q.correct?' ✓':myAns===l?' ✗':''}</span>${q[l]}
+            </button>`;
+          }).join('')}
+        </div>
+        <div class="center" style="font-size:15px;font-weight:bold;padding:10px;
+          color:${!myAns?'var(--muted)':ok?'var(--green)':'var(--red)'};">
+          ${!myAns ? '⚠ No answer submitted'
+            : ok   ? '✓ You got it!'
+            : `✗ Correct answer: ${q.correct}`}
+        </div>
+        <div class="explain">💡 ${q.explanation}</div>
+      </div>
+
+      <div class="center" style="color:var(--dim);font-size:11px;padding:10px;letter-spacing:1px;">
+        ⏳ Waiting for host to advance...
+      </div>
+    </div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  GAME OVER
+  // ════════════════════════════════════════════════════════════════
+  function renderGameover(st, view) {
+    const won  = st.gameResult === 'class';
+    const cHP  = st.classHP  ?? 0;
+    const hHP  = st.hasherHP ?? 0;
+
+    const art  = won
+      ? `<pre class="go-art art c">${ART.winC}</pre>`
+      : `<pre class="go-art art h">${ART.winH}</pre>`;
+
+    const html = `
+    <div class="go-wrap">
+      ${art}
+      <div style="font-size:22px;font-weight:bold;margin:14px 0;
+        color:${won?'var(--green)':'var(--red)'};">
+        ${won ? '🎓 GRADUATION UNLOCKED — THE HASHER IS HASHED!'
+              : '💀 THE HASHER WINS — STUDY HARDER.'}
+      </div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:20px;">
+        ${won ? 'The cohort collectively defeated the final boss. Well earned.'
+              : 'The Hasher remains undefeated. There are no shortcuts in cybersecurity.'}
+      </div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <div class="go-stat">
+          <div style="color:var(--green);font-size:9px;letter-spacing:2px;">COHORT HP</div>
+          <div style="font-size:28px;font-weight:bold;color:${cHP>0?'var(--green)':'var(--red)'};">${cHP}</div>
+        </div>
+        <div class="go-stat">
+          <div style="color:var(--red);font-size:9px;letter-spacing:2px;">HASHER HP</div>
+          <div style="font-size:28px;font-weight:bold;color:${hHP>0?'var(--red)':'var(--muted)'};">${hHP}</div>
+        </div>
+      </div>
+      ${view==='host' ? `<button class="btn btn-yellow btn-lg" onclick="hostInit()">↺ PLAY AGAIN</button>` : ''}
+    </div>`;
+
+    if (view === 'host') {
+      const hb = document.getElementById('hbody');
+      if (hb) { hb.innerHTML = html; return; }
+    }
+    if (view === 'hasher') {
+      const hb = document.getElementById('hsbody');
+      if (hb) { hb.innerHTML = html; return; }
+    }
+    app$().innerHTML = `<div class="wrap">${html}</div>`;
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  UTILITIES
+  // ════════════════════════════════════════════════════════════════
+  function errBox(msg) {
+    return `<div style="color:var(--red);padding:30px;max-width:600px;margin:0 auto;font-size:13px;">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--red);margin-bottom:12px;">⚠ ERROR</div>
+      ${msg}
+    </div>`;
+  }
+
+  window.addEventListener('beforeunload', () => {
+    killListeners.forEach(f => f());
+  });
+  </script>
+</body>
+</html>
