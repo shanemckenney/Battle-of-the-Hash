@@ -55,6 +55,22 @@ The game is designed around the graduation cohort experience: students battle th
 
 ---
 
+## Screenshots
+
+### Landing Page
+![Landing Page](screenshots/landing.png)
+
+### Host Control Panel *(shared on Zoom)*
+![Host View](screenshots/host.png)
+
+### The Hasher — Boss Panel *(Shane's private tab)*
+![Hasher Panel](screenshots/hasher.png)
+
+### Student View *(each student's own device)*
+![Student View](screenshots/player.png)
+
+---
+
 ## Architecture
 
 ```
@@ -99,9 +115,15 @@ Firebase Realtime Database
 | Role | URL | Who | What They Do |
 |---|---|---|---|
 | Host | `?role=host` | Lead Instructor | Shared on Zoom. Controls question flow, sees live votes, triggers reveals. |
-| Hasher | `?role=hasher` | The Boss (Instructor) | Private tab. Sees live vote intel. Fires taunts. Watches the class struggle. |
+| Hasher | `?role=hasher` | The Boss (Shane) | Private tab. Sees live vote intel. Fires taunts. Watches the class struggle. |
 | Student | `?role=player` | Every student | Opens on their own device. Joins by name. Submits answers. |
-| Landing | (no param) | Anyone | Role selector with room code display. |
+| Landing | (no param) | Anyone | Role selector with all three buttons. **Don't share this URL with students.** |
+
+> **Student URL:** Always share the direct player URL with your class — not the base landing page. This drops students straight into the name entry screen with no way to accidentally click Host or Hasher.
+> ```
+> https://yourusername.github.io/your-repo-name/?role=player
+> ```
+> Bookmark `?role=host` and `?role=hasher` yourself. They never need to appear in Zoom chat.
 
 ---
 
@@ -243,7 +265,7 @@ If all six steps work, you're good.
 **At game time:**
 - [ ] Open `?role=hasher` in a private tab → paste Anthropic key → Save
 - [ ] Lead instructor opens `?role=host` → shares screen on Zoom
-- [ ] Post the base URL in Zoom chat for students
+- [ ] Post the `?role=player` URL in Zoom chat — **not** the base URL
 - [ ] Host clicks **Initialize Arena**
 - [ ] Students join → host clicks **Start — Question 1**
 
