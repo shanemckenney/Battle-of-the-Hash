@@ -63,7 +63,7 @@ The game is designed around the graduation cohort experience: students battle th
 ### Host Control Panel *(shared on Zoom)*
 ![Host View](Screenshots/Host.png)
 
-### The Hasher — Boss Panel *(Shane's private tab)*
+### The Hasher — Boss Panel *(Hasher's private tab)*
 ![Hasher Panel](Screenshots/Hasher.png)
 
 ### Student View *(each student's own device)*
