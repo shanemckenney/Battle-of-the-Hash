@@ -58,7 +58,7 @@ The game is designed around the graduation cohort experience: students battle th
 ## Screenshots
 
 ### Landing Page
-![Landing Page](screenshots/landing.png)
+![Landing Page](Screenshots/Landing.png)
 
 ### Host Control Panel *(shared on Zoom)*
 ![Host View](screenshots/host.png)
