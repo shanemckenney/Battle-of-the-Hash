@@ -115,7 +115,7 @@ Firebase Realtime Database
 | Role | URL | Who | What They Do |
 |---|---|---|---|
 | Host | `?role=host` | Lead Instructor | Shared on Zoom. Controls question flow, sees live votes, triggers reveals. |
-| Hasher | `?role=hasher` | The Boss (Shane) | Private tab. Sees live vote intel. Fires taunts. Watches the class struggle. |
+| Hasher | `?role=hasher` | The Boss (Instructor) | Private tab. Sees live vote intel. Fires taunts. Watches the class struggle. |
 | Student | `?role=player` | Every student | Opens on their own device. Joins by name. Submits answers. |
 | Landing | (no param) | Anyone | Role selector with all three buttons. **Don't share this URL with students.** |
 
